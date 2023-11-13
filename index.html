@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment Analysis</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: linear-gradient(90deg, #003d82, #b3ffcc); /* Dark blue to light green gradient */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  .search-container {
+    text-align: center;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  .search-container h1 {
+    margin: 0 0 20px;
+  }
+  .search-input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 5px solid #FF5733; /* Red */
+    border-radius: 20px;
+    padding: 10px;
+  }
+  .search-input {
+    padding: 10px;
+    width: 300px;
+    margin-right: 10px;
+    border: none;
+    outline: none;
+  }
+  .search-button {
+    padding: 10px 20px;
+    background: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .search-button:hover {
+    background: #003d82;
+  }
+  .result-container {
+    margin-top: 20px;
+  }
+  .sentiment-image {
+    max-width: 100%;
+    border-radius: 5px;
+  }
+  .popup {
+    display: none;
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
+  .logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .logo {
+    max-width: 100px; /* Adjust the size as needed */
+    margin-top: 10px; /* Adjust the margin as needed */
+  }
+  .instructions-container {
+    text-align: center;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+  }
+  .instructions {
+    display: none;
+  }
+  .show-instructions {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .instructions-list {
+    text-align: left;
+    margin-top: 10px;
+  }
+  .instructions-list li {
+    margin-bottom: 10px;
+  }
+  .images-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  .small-image {
+    max-width: 100px;
+    margin: 0 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="search-container">
+      <!-- Logo container -->
+      <div class="logo-container">
+        <img src="image/logo.png" alt="Logo" class="logo">
+      </div>
+      <h1>Sentiment Analysis</h1>
+      <div class="search-input-container">
+        <input type="text" class="search-input" id="searchTerm" placeholder="Enter a keyword...">
+        <button class="search-button" onclick="analyzeSentiment()">Analyze</button>
+      </div>
+      <div class="result-container" id="resultContainer"></div>
+      <!-- Popup element -->
+      <div class="popup" id="popup">
+        Please enter a keyword before analyzing.
+      </div>
+      <!-- Instructions container -->
+      <div class="instructions-container">
+        <p class="show-instructions" onclick="toggleInstructions()">Show Instructions</p>
+        <div class="instructions">
+          <ul class="instructions-list">
+            <li>Think of an interesting topic</li>
+            <li>Type it in the search bar above</li>
+            <li>Click on the 'Analyze' button</li>
+          </ul>
+        </div>
+      </div>
+      <!-- Images container -->
+      <div class="images-container">
+        <img src="image/image1.jpg" alt="Image 1" class="small-image">
+        <img src="image/image2.jpg" alt="Image 2" class="small-image">
+        <img src="image/image3.jpg" alt="Image 3" class="small-image">
+      </div>
+    </div>
+  </div>
+
+<script>
+  function analyzeSentiment() {
+    var searchTerm = document.getElementById('searchTerm').value;
+    var resultContainer = document.getElementById('resultContainer');
+    var popup = document.getElementById('popup');
+
+    // Check if the searchTerm is empty
+    if (searchTerm.trim() === '') {
+      // Show the popup
+      popup.style.display = 'block';
+
+      // Delay hiding the popup for a few seconds (e.g., 3 seconds)
+      setTimeout(function () {
+        popup.style.display = 'none';
+      }, 3000);
+
+      return; // Stop further execution
+    }
+
+    resultContainer.innerHTML = ''; // Clear previous results
+
+    // Send the search term as a query parameter to the server
+    fetch(`/sentiment?search=${encodeURIComponent(searchTerm)}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Log the data source in the developer console
+        if (data.dataSource) {
+          console.log('Data served from:', data.dataSource);
+        }
+
+        console.log(data);
+        console.log('data sent to the server successfully');
+        // Check if the sentiment analysis was queued or if a result was returned
+        if (data.message) {
+          resultContainer.innerHTML = '<p>' + data.message + '</p>';
+        } else {
+          var avgSentiment = data.averageSentiment; // Use the average sentiment directly
+          var sentimentImage = data.image; // Use the image path directly
+          var sentimentText = avgSentiment > 0.5 ? 'Positive' : avgSentiment <= -0.5 ? 'Negative' : 'Neutral';
+
+          resultContainer.innerHTML = '<img src="' + sentimentImage + '" alt="Sentiment Image" class="sentiment-image">' +
+            '<p>Sentiment: ' + sentimentText + '</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        resultContainer.innerHTML = '<p>Error analyzing sentiment.</p>';
+      });
+  }
+
+  function toggleInstructions() {
+    var instructions = document.querySelector('.instructions');
+    instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
